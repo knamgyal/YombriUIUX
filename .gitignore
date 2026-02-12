@@ -1,0 +1,90 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# generated native folders
+/ios
+/android
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS
+.DS_Store
+*.pem
+.DS_Store
+Thumbs.db
+
+# env files
+.env
+.env.*
+!.env.example
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+coverage/
+.turbo/
+.next/
+
+# Editor
+.vscode/
+.idea/package-lock.json
+
+
+# Local/backup assets (do not commit)
+apps/mobile/assets/*_old.png
+apps/mobile/assets/* yombri.png
+apps/mobile/assets/1536 x 1024.png
+apps/mobile/assets/adaptive-icon-blue-Copy.png
+# Local/backup assets (do not commit)
+apps/mobile/assets/*_old.png
+apps/mobile/assets/* yombri.png
+apps/mobile/assets/1536 x 1024.png
+apps/mobile/assets/adaptive-icon-blue-Copy.png
+
+# Local/backup mobile assets (do not commit)
+apps/mobile/assets/*_old.png
+apps/mobile/assets/1024 x 1024 yombri.png
+apps/mobile/assets/48 x 48 yombri.png
+apps/mobile/assets/1536 x 1024.png
+apps/mobile/assets/adaptive-icon-blue-Copy.png
+
+# Supabase local
+supabase/.temp/
+
+# Supabase snippets (local)
+supabase/snippets/

@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Yombri",
+    "slug": "yombri",
+    "scheme": "yombri",
+    "sdkVersion": "52.0.0",
+    "owner": "yombri",
+    "plugins": ["expo-router"],
+    "extra": {
+      "router": {
+        "origin": "expo-router"
+      }
+    }
+  }
+}
