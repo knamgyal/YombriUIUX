@@ -772,7 +772,7 @@ language sql
 immutable
 parallel safe
 as $$
-  select digest(a, 'sha256') = digest(b, 'sha256');
+  select extensions.digest(a, 'sha256') = extensions.digest(b, 'sha256');
 $$;
 
 comment on function yombri.constant_time_compare is 
@@ -1009,7 +1009,7 @@ begin
   );
 
   v_payload_b64 := yombri.base64url_encode(convert_to(v_payload::text, 'utf8'));
-  v_sig := hmac(convert_to(v_payload_b64, 'utf8'), v_secret, 'sha256');
+  v_sig := extensions.hmac(convert_to(v_payload_b64, 'utf8'), v_secret, 'sha256');
   v_sig_b64 := yombri.base64url_encode(v_sig);
 
   -- Store nonce for replay protection
@@ -1099,7 +1099,7 @@ begin
   end if;
 
   v_expected_sig_b64 := yombri.base64url_encode(
-    hmac(convert_to(v_payload_b64, 'utf8'), v_secret, 'sha256')
+    extensions.hmac(convert_to(v_payload_b64, 'utf8'), v_secret, 'sha256')
   );
 
   -- Fixed: Constant-time comparison
@@ -1163,7 +1163,7 @@ begin
   v_hex := lpad(to_hex(v_counter), 16, '0');
   v_counter_bytes := decode(v_hex, 'hex');
 
-  v_mac := hmac(v_counter_bytes, p_secret, 'sha1');
+  v_mac := extensions.hmac(v_counter_bytes, p_secret, 'sha1');
 
   v_offset := (get_byte(v_mac, 19) & 15);
 
