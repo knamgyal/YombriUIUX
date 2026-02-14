@@ -1,18 +1,24 @@
-// apps/mobile/app/_layout.tsx
-
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { View } from "react-native";
+import { SplashScreen } from "expo-router"; // ← EXPO-ROUTER SPLASHSCREEN
+import { useEffect, useState } from "react";
 
 import { ThemeProvider } from "../src/providers/ThemeProvider";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
+    if (isReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [isReady]);
+
+  // Wait for theme
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <ThemeProvider>
@@ -22,13 +28,8 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: "transparent" },
         }}
       >
-        {/* Main app shell - tabs for Home, Profile, etc. */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-        {/* Hidden admin/organizer flows - not in tab navigation */}
         <Stack.Screen name="(admin)" options={{ headerShown: false }} />
-
-        {/* 404 fallback */}
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>

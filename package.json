@@ -10,13 +10,29 @@
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
-    "@types/react-native": "^0.73.0",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
+    "@typescript-eslint/parser": "^8.55.0",
     "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "typescript": "^5.6.0"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "pnpm": {
+    "overrides": {
+      "metro": "0.81.5",
+      "metro-config": "0.81.5",
+      "metro-resolver": "0.81.5",
+      "metro-cache": "0.81.5",
+      "metro-core": "0.81.5",
+      "metro-file-map": "0.81.5",
+      "metro-symbolicate": "0.81.5",
+      "metro-minify-uglify": "0.81.5",
+      "metro-babel-transformer": "0.81.5"
+    }
+  },
   "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
 }

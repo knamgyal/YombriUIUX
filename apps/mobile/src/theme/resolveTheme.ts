@@ -66,9 +66,7 @@ interface DesignTheme {
   };
 }
 
-function resolveThemeKeys(
-  tokens: DesignTheme["color"][TokenGroups]
-): ThemeColorShape {
+function resolveThemeKeys(tokens: DesignTheme["color"][TokenGroups]): ThemeColorShape {
   return {
     background: tokens.background,
     surface: tokens.surface,
@@ -86,7 +84,7 @@ function resolveThemeKeys(
     onError: tokens.onError,
     success: tokens.success,
     onSuccess: tokens.onSuccess,
-    outline: tokens.outline, // optional per PRD.
+    outline: tokens.outline ?? "transparent", // ✅ PRD: optional → fallback
   };
 }
 

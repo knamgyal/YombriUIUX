@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Yombri",
+    "slug": "yombri",
+    "scheme": "yombri",
+    "owner": "yombri",
+    "plugins": [
+      "expo-router",
+      [
+        "nativewind",
+        {
+          "input": "./global.css",
+          "configs": ["./tailwind.config.js"]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Yombri needs location for event check-in verification."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Yombri needs camera for QR code scanning."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "54d31f85-6ed9-4a64-a55f-f465640cfc40"
+      }
+    }
+  }
+}

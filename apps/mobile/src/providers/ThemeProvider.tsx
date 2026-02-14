@@ -1,97 +1,62 @@
-// apps/mobile/src/providers/ThemeProvider.tsx
-
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useState, useEffect, ReactNode, useContext } from "react";
 import { Appearance, ColorSchemeName } from "react-native";
+import { resolveTheme } from "../theme/resolveTheme";
+import { ThemeMode } from "../../types"; // Adjust path if needed
 
-import { resolveTheme, Theme, ThemeMode } from "@yombri/native-runtime";
-
-const STORAGE_KEY = "@yombri:themeMode";
-
-type ThemeContextValue = {
-  theme: Theme;
-  mode: ThemeMode;
-  setMode: (mode: ThemeMode) => Promise<void>;
+interface ThemeContextValue {
+  mode: ThemeMode | null;
+  setMode: (mode: ThemeMode) => void;
+  theme: ReturnType<typeof resolveTheme> | null;
   isReady: boolean;
-};
+}
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) {
+interface ThemeProviderProps {
+  children: ReactNode;
+}
+
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [mode, setMode_] = useState<ThemeMode | null>(null);
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme() ?? "light"
   );
   const [isReady, setIsReady] = useState(false);
 
-  const setMode = useCallback(
-    async (nextMode: ThemeMode) => {
-      setMode_(nextMode);
-      try {
-        await AsyncStorage.setItem(STORAGE_KEY, nextMode);
-      } catch (err) {
-        console.error("Failed to persist theme mode", err);
-      }
-    },
-    []
-  );
+  const setMode = (newMode: ThemeMode) => {
+    setMode_(newMode);
+  };
 
-  // Load persisted mode once at mount
   useEffect(() => {
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw === "light" || raw === "dark" || raw === "system") {
-          setMode_(raw);
-        } else {
-          setMode_("system"); // PRD default: calm, neutral = system
-        }
-      } catch (err) {
-        console.error("Failed to read theme mode, falling back to system", err);
-        setMode_("system");
-      }
-      setIsReady(true);
-    })();
-  }, []);
+    const theme = mode ? resolveTheme(mode, systemScheme) : null;
+    setIsReady(Boolean(theme));
+  }, [mode, systemScheme]);
 
-  // Subscribe to system appearance changes
   useEffect(() => {
-    const listener = ({ colorScheme }: { colorScheme: ColorSchemeName }) => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
       setSystemScheme(colorScheme ?? "light");
-    };
-    const subscription = Appearance.addChangeListener(listener);
-    return () => {
-      subscription.remove();
-    };
+    });
+    return () => subscription.remove();
   }, []);
-
-  // Compute resolved theme from mode + system
-  const theme = useMemo(() => {
-    if (!isReady || mode === null) {
-      return resolveTheme("system", systemScheme);
-    }
-    return resolveTheme(mode, systemScheme);
-  }, [isReady, mode, systemScheme]);
-
-  // Gate render until storage load completes (avoid flash)
-  if (!isReady) {
-    return null;
-  }
 
   const value: ThemeContextValue = {
-    theme,
-    mode: mode as ThemeMode,
+    mode,
     setMode,
+    theme: mode ? resolveTheme(mode, systemScheme) : null,
     isReady,
   };
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
-export function useTheme(): ThemeContextValue {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within ThemeProvider");
   }
-  return ctx;
-}
+  return context;
+};

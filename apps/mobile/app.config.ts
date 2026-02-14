@@ -34,6 +34,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#ffffff',
   },
 
+  splash: {
+    image: './assets/splash.png',
+    resizeMode: 'contain',
+    backgroundColor: '#ffffff',
+  },
+  
   assetBundlePatterns: ['**/*'],
 
   ios: {
@@ -88,9 +94,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   extra: {
     ...(config.extra ?? {}),
-    APP_VARIANT,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    APP_VARIANT,
+    eas: {
+      projectId: '54d31f85-6ed9-4a64-a55f-f465640cfc40'  // ← ADD THIS
+    }
   },
 
   plugins: [

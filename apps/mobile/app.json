@@ -3,13 +3,19 @@
     "name": "Yombri",
     "slug": "yombri",
     "scheme": "yombri",
-    "sdkVersion": "52.0.0",
     "owner": "yombri",
-    "plugins": ["expo-router"],
-    "extra": {
-      "router": {
-        "origin": "expo-router"
-      }
-    }
+    "plugins": [
+      "expo-router",
+      [
+        "nativewind",
+        {
+          "input": "./global.css",
+          "configs": ["./tailwind.config.js"]
+        }
+      ],
+      "expo-location",
+      "expo-camera"
+      // ❌ REMOVED: "expo-linking" (core module)
+    ]
   }
 }
