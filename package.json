@@ -5,7 +5,8 @@
     "dev:mobile": "pnpm --filter mobile dev",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc -b",
-    "test": "echo \"No tests yet\" && exit 0",
+    "test": "pnpm --filter apps/mobile test",
+    "test:ci": "pnpm --filter apps/mobile test:ci",
     "ci": "pnpm typecheck"
   },
   "devDependencies": {
@@ -15,6 +16,7 @@
     "eslint": "^9.0.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.0"
   },
   "workspaces": [

@@ -7,16 +7,27 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "APP_VARIANT": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yvcyfvzkbdywcdweolwq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_5H27Rrq6CJaARcrr9qEyCQ_1q7d-Gq_"
+      },
       "ios": {
         "image": "latest",
         "resourceClass": "m-medium",
         "simulator": false
-    }
-  },
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "preview"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {

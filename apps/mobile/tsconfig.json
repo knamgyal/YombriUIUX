@@ -1,4 +1,45 @@
 {
-  "compilerOptions": {},
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    // Strictness
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
+
+    // Module resolution
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+
+    // Source / output
+    "jsx": "react-native",
+    "baseUrl": "./",
+    "rootDir": "./",
+    "paths": {
+      "@logic/*": ["src/logic/*"],
+      "@utils/*": ["src/utils/*"],
+      "@yombri/design-tokens": ["../../packages/design-tokens/src"],
+      "@yombri/native-runtime": ["../../packages/native-runtime/src"],
+      "@yombri/supabase-client": ["../../packages/supabase-client/src"]
+    },
+
+    // Emit options (Jest / Expo both transpile; we usually don’t emit from tsc)
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "app",
+    "jest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".expo",
+    "**/__tests__/e2e/**"
+  ]
 }
