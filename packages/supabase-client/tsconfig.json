@@ -5,6 +5,7 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
+    "isolatedModules": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2022"],

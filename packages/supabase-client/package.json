@@ -12,9 +12,10 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "NODE_ENV=test jest --config jest.config.cjs",
+    "test:coverage": "NODE_ENV=test jest --config jest.config.cjs --coverage",
+    "test:ci": "pnpm test:coverage"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
