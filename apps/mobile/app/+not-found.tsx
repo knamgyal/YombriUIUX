@@ -1,36 +1,35 @@
-// apps/mobile/app/+not-found.tsx
-
+import React from "react";
 import { View, Text } from "react-native";
-import { Link, Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useTheme } from "../src/providers/ThemeProvider";
+import { spacing, typography } from "@yombri/design-tokens";
+import { Button } from "../src/components/primitives/Button";
 
 export default function NotFoundScreen() {
+  const router = useRouter();
   const { theme } = useTheme();
+  const c = theme.colors;
 
   return (
     <>
-      <Stack.Screen options={{ title: "Not Found" }} />
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: theme.spacing.md,
-        }}
-      >
+      <Stack.Screen options={{ title: "Not found" }} />
+      <View style={{ flex: 1, backgroundColor: c.background, padding: spacing.gap.lg }}>
         <Text
           style={{
-            fontSize: theme.typography.heading.fontSize,
-            color: theme.colors.text,
-            marginBottom: theme.spacing.sm,
+            fontFamily: typography.heading.md.fontFamily,
+            fontSize: typography.heading.md.fontSize,
+            lineHeight: typography.heading.md.lineHeight,
+            fontWeight: typography.heading.md.fontWeight as unknown as "700",
+            color: c.onBackground,
+            marginBottom: spacing.gap.md,
           }}
         >
-          This screen doesn't exist.
+          Route not found
         </Text>
-        <Link href="/" style={{ color: theme.colors.accent, marginTop: theme.spacing.md }}>
-          Go to home screen
-        </Link>
+
+        <Button onPress={() => router.replace("/(debug)/phase1-audit")}>
+          Back to Phase 1 Audit
+        </Button>
       </View>
     </>
   );

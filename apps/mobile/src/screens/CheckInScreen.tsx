@@ -82,7 +82,7 @@ export function CheckInScreen() {
         if (netInfo.isConnected === false) {
           Alert.alert(
             'Offline Check-In',
-            'You appear to be offline. Check-in has been queued and will sync when you're back online.',
+            'You appear to be offline. Check-in has been queued and will sync when you are back online.',
             [{ text: 'OK', onPress: () => router.replace(`/impact-moment?eventId=${eventId}&offline=true`) }]
           );
         } else {

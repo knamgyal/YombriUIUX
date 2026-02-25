@@ -1,19 +1,19 @@
-// apps/mobile/app/(tabs)/profile.tsx
+// apps/mobile/app/(tabs)/search.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { spacing, typography } from '@yombri/design-tokens';
 
-export default function ProfileScreen() {
+export default function SearchScreen() {
   const { theme } = useTheme();
   const c = theme.colors;
   return (
     <>
-      <Stack.Screen options={{ title: 'Profile' }} />
+      <Stack.Screen options={{ title: 'Search' }} />
       <View style={[styles.container, { backgroundColor: c.background }]}>
         <Text style={[styles.label, { color: c.onSurfaceVariant }]}>
-          Profile — Phase 2
+          Search — Phase 2
         </Text>
       </View>
     </>

@@ -20,6 +20,7 @@ function getAndroidPackage() {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
+  jsEngine: "hermes",
 
   name: getAppName(),
   slug: 'yombri',

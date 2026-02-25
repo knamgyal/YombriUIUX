@@ -89,3 +89,6 @@ supabase/tests/.env.local.sh
 
 # Supabase snippets (local)
 supabase/snippets/
+
+apps/mobile/.expo-export-*
+_expo/static

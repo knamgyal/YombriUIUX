@@ -82,7 +82,7 @@ export function HomeScreen() {
         });
         Alert.alert(
           'Interest Signaled',
-          'Organizers in your area will see that you're ready for action.',
+          'Organizers in your area will see that you are ready for action.',
           [{ text: 'OK' }]
         );
       } else {

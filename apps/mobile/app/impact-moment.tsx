@@ -1,3 +1,3 @@
-import { ImpactMomentScreen } from '../../src/screens/ImpactMomentScreen';
+import { ImpactMomentScreen } from '../src/screens/ImpactMomentScreen';
 
 export default ImpactMomentScreen;

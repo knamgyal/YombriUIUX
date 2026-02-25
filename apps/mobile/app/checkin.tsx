@@ -1,3 +1,5 @@
-import { CheckInScreen } from '../../src/screens/CheckInScreen';
+import CheckInScreen from '@/src/screens/CheckInScreen';
 
-export default CheckInScreen;
+export default function CheckinRoute() {
+  return <CheckInScreen />;
+}

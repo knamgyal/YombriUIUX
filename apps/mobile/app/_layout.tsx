@@ -1,6 +1,8 @@
 // apps/mobile/app/_layout.tsx
-import { Stack, SplashScreen } from "expo-router";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+
 import { ThemeProvider, useTheme } from "../src/providers/ThemeProvider";
 
 SplashScreen.preventAutoHideAsync();
@@ -9,7 +11,9 @@ function RootLayoutInner() {
   const { isReady } = useTheme();
 
   useEffect(() => {
-    if (isReady) SplashScreen.hideAsync();
+    if (isReady) {
+      SplashScreen.hideAsync();
+    }
   }, [isReady]);
 
   if (!isReady) return null;

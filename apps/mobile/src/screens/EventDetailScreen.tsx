@@ -1,216 +1,279 @@
-import { View, Text, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { useEffect, useState } from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Button } from '@yombri/native-runtime';
-import { colors, spacing, typography } from '@yombri/design-tokens';
-import { supabaseClient } from '@yombri/supabase-client';
-import { useAnalytics } from '../hooks/useAnalytics';
+// apps/mobile/src/screens/EventDetailScreen.tsx
+import React, { useMemo } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
-interface EventDetail {
+import { spacing, radius, typography } from "@yombri/design-tokens";
+import { useTheme } from "../providers/ThemeProvider";
+
+import { Button } from "../components/primitives/Button";
+import { ListItem } from "../components/primitives/ListItem";
+
+type Params = { id?: string | string[] };
+
+type EventDetail = {
   id: string;
   title: string;
   description: string;
-  organizer_id: string;
-  organizer_name: string;
-  starts_at: string;
-  ends_at: string;
-  location_name: string;
-  what_to_bring?: string;
-  cancellation_policy?: string;
+  organizerName: string;
+  startsAtLabel: string;
+  endsAtLabel: string;
+  locationName: string;
+  whatToBring?: string;
+  cancellationPolicy?: string;
+};
+
+function normalizeId(id?: string | string[]) {
+  if (typeof id === "string") return id;
+  if (Array.isArray(id)) return id[0];
+  return undefined;
 }
 
 export function EventDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { trackEvent } = useAnalytics();
-  
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isOrganizer, setIsOrganizer] = useState(false);
-  const [hasJoined, setHasJoined] = useState(false);
+  const { theme } = useTheme();
+  const params = useLocalSearchParams<Params>();
 
-  useEffect(() => {
-    if (id) {
-      loadEvent();
-    }
-  }, [id]);
+  const eventId = normalizeId(params.id);
 
-  const loadEvent = async () => {
-    setIsLoading(true);
-    try {
-      const userId = await supabaseClient.getCurrentUserId();
-      
-      const result = await supabaseClient.events.getEventById(id);
-      if (result.success && result.event) {
-        const eventData = result.event as EventDetail;
-        setEvent(eventData);
-        setIsOrganizer(userId === eventData.organizer_id);
-        
-        // Check if user has joined
-        const { data: participation } = await supabaseClient
-          .getClient()
-          .from('event_participants')
-          .select('status')
-          .eq('event_id', id)
-          .eq('user_id', userId)
-          .single();
-        
-        setHasJoined(participation?.status === 'confirmed');
-      }
-    } catch (err) {
-      console.error('Failed to load event:', err);
-      Alert.alert('Error', 'Failed to load event details');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Phase 1: static placeholder data only (no backend).
+  const event: EventDetail | null = useMemo(() => {
+    if (!eventId) return null;
 
-  const handleJoinEvent = async () => {
-    try {
-      const { error } = await supabaseClient
-        .getClient()
-        .from('event_participants')
-        .insert({
-          event_id: id,
-          user_id: await supabaseClient.getCurrentUserId(),
-          status: 'confirmed',
-        });
+    return {
+      id: eventId,
+      title: "Community Event",
+      description:
+        "This is a Phase 1 placeholder screen to validate tokens, primitives, and theme runtime. Backend content will be connected in Phase 2.",
+      organizerName: "Organizer",
+      startsAtLabel: "TBD",
+      endsAtLabel: "TBD",
+      locationName: "TBD (set in Phase 2)",
+      whatToBring: "TBD",
+      cancellationPolicy:
+        "No formal penalties. We trust you to honor your commitment, but understand that life happens.",
+    };
+  }, [eventId]);
 
-      if (!error) {
-        trackEvent({ type: 'event_joined', eventId: id });
-        setHasJoined(true);
-        Alert.alert('Success', 'You've joined this event!');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to join event');
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.neutral[50] }}>
-        <ActivityIndicator size="large" color={colors.brand.emerald} />
-      </View>
-    );
-  }
+  const c = theme.colors;
+  const outline = c.outline ?? c.surfaceVariant;
 
   if (!event) {
     return (
-      <View className="flex-1 items-center justify-center" style={{ backgroundColor: colors.neutral[50] }}>
-        <Text style={{ color: colors.semantic.error }}>Event not found</Text>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: c.background,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: spacing.gap.lg,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: typography.body.md.fontFamily,
+            fontSize: typography.body.md.fontSize,
+            lineHeight: typography.body.md.lineHeight,
+            fontWeight: typography.body.md.fontWeight as unknown as "400",
+            color: c.onBackground,
+            textAlign: "center",
+          }}
+        >
+          Event not found (missing id)
+        </Text>
+
+        <View style={{ height: spacing.gap.md }} />
+
+        <Button variant="secondary" onPress={() => router.back()}>
+          Go back
+        </Button>
       </View>
     );
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.neutral[50] }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.grid }}>
-        <Text
+    <View style={{ flex: 1, backgroundColor: c.background }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: spacing.screen.xs,
+          paddingVertical: spacing.gap.lg,
+          gap: spacing.gap.lg,
+        }}
+      >
+        {/* Header */}
+        <View
           style={{
-            fontSize: 28,
-            fontWeight: '700',
-            color: colors.neutral[900],
+            backgroundColor: c.surface,
+            borderRadius: radius.lg,
+            borderWidth: 1,
+            borderColor: outline,
+            padding: spacing.gap.lg,
+            gap: spacing.gap.sm,
           }}
-          className="mb-2"
         >
-          {event.title}
-        </Text>
+          <Text
+            style={{
+              fontFamily: typography.heading.md.fontFamily,
+              fontSize: typography.heading.md.fontSize,
+              lineHeight: typography.heading.md.lineHeight,
+              fontWeight: typography.heading.md.fontWeight as unknown as "700",
+              color: c.onSurface,
+            }}
+          >
+            {event.title}
+          </Text>
 
-        <Text
-          style={{
-            fontSize: typography.body.size,
-            color: colors.neutral[600],
-          }}
-          className="mb-6"
-        >
-          Organized by {event.organizer_name}
-        </Text>
+          <Text
+            style={{
+              fontFamily: typography.body.md.fontFamily,
+              fontSize: typography.body.md.fontSize,
+              lineHeight: typography.body.md.lineHeight,
+              fontWeight: typography.body.md.fontWeight as unknown as "400",
+              color: c.onSurfaceVariant,
+            }}
+          >
+            Organized by {event.organizerName}
+          </Text>
 
-        <View className="mb-6">
-          <SectionHeader title="When" />
-          <Text style={{ fontSize: typography.body.size, color: colors.neutral[800] }}>
-            {new Date(event.starts_at).toLocaleString()} -{' '}
-            {new Date(event.ends_at).toLocaleString()}
+          <Text
+            style={{
+              fontFamily: typography.label.sm.fontFamily,
+              fontSize: typography.label.sm.fontSize,
+              lineHeight: typography.label.sm.lineHeight,
+              fontWeight: typography.label.sm.fontWeight as unknown as "400",
+              color: c.onSurfaceVariant,
+            }}
+          >
+            Event ID: {event.id}
           </Text>
         </View>
 
-        <View className="mb-6">
-          <SectionHeader title="Where" />
-          <Text style={{ fontSize: typography.body.size, color: colors.neutral[800] }}>
-            {event.location_name}
-          </Text>
-        </View>
+        {/* Sections */}
+        <View style={{ gap: spacing.gap.md }}>
+          <ListItem
+            title="When"
+            subtitle={`${event.startsAtLabel} — ${event.endsAtLabel}`}
+            onPress={() => {}}
+          />
 
-        <View className="mb-6">
-          <SectionHeader title="About" />
-          <Text style={{ fontSize: typography.body.size, color: colors.neutral[800] }}>
-            {event.description}
-          </Text>
-        </View>
+          <ListItem
+            title="Where"
+            subtitle={event.locationName}
+            onPress={() => {}}
+          />
 
-        {event.what_to_bring && (
-          <View className="mb-6">
-            <SectionHeader title="What to bring" />
-            <Text style={{ fontSize: typography.body.size, color: colors.neutral[800] }}>
-              {event.what_to_bring}
+          <View
+            style={{
+              backgroundColor: c.surface,
+              borderRadius: radius.lg,
+              borderWidth: 1,
+              borderColor: outline,
+              padding: spacing.gap.lg,
+              gap: spacing.gap.sm,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: typography.label.md.fontFamily,
+                fontSize: typography.label.md.fontSize,
+                lineHeight: typography.label.md.lineHeight,
+                fontWeight: typography.label.md.fontWeight as unknown as "600",
+                color: c.onSurfaceVariant,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+              }}
+            >
+              About
+            </Text>
+
+            <Text
+              style={{
+                fontFamily: typography.body.md.fontFamily,
+                fontSize: typography.body.md.fontSize,
+                lineHeight: typography.body.md.lineHeight,
+                fontWeight: typography.body.md.fontWeight as unknown as "400",
+                color: c.onSurface,
+              }}
+            >
+              {event.description}
             </Text>
           </View>
-        )}
 
-        <View className="mb-6">
-          <SectionHeader title="What happens if I don't show?" />
-          <Text style={{ fontSize: typography.body.size, color: colors.neutral[800] }}>
-            {event.cancellation_policy || 
-              'No formal penalties. We trust you to honor your commitment, but understand that life happens.'}
-          </Text>
+          {event.whatToBring ? (
+            <ListItem
+              title="What to bring"
+              subtitle={event.whatToBring}
+              onPress={() => {}}
+            />
+          ) : null}
+
+          <View
+            style={{
+              backgroundColor: c.surface,
+              borderRadius: radius.lg,
+              borderWidth: 1,
+              borderColor: outline,
+              padding: spacing.gap.lg,
+              gap: spacing.gap.sm,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: typography.label.md.fontFamily,
+                fontSize: typography.label.md.fontSize,
+                lineHeight: typography.label.md.lineHeight,
+                fontWeight: typography.label.md.fontWeight as unknown as "600",
+                color: c.onSurfaceVariant,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+              }}
+            >
+              If I don’t show
+            </Text>
+
+            <Text
+              style={{
+                fontFamily: typography.body.md.fontFamily,
+                fontSize: typography.body.md.fontSize,
+                lineHeight: typography.body.md.lineHeight,
+                fontWeight: typography.body.md.fontWeight as unknown as "400",
+                color: c.onSurface,
+              }}
+            >
+              {event.cancellationPolicy ??
+                "No formal penalties. We trust you to honor your commitment, but understand that life happens."}
+            </Text>
+          </View>
         </View>
       </ScrollView>
 
-      <View 
-        className="p-4"
-        style={{ 
-          borderTopWidth: 1, 
-          borderTopColor: colors.neutral[200],
-          backgroundColor: colors.neutral[50],
+      {/* Bottom actions */}
+      <View
+        style={{
+          paddingHorizontal: spacing.screen.xs,
+          paddingVertical: spacing.gap.md,
+          borderTopWidth: 1,
+          borderTopColor: outline,
+          backgroundColor: c.surface,
+          gap: spacing.gap.sm,
         }}
       >
-        {isOrganizer ? (
-          <Button
-            onPress={() => router.push(`/admin/event-dashboard?id=${id}`)}
-            variant="primary"
-          >
-            Open Dashboard
-          </Button>
-        ) : hasJoined ? (
-          <Button
-            onPress={() => router.push(`/checkin?eventId=${id}`)}
-            variant="primary"
-          >
-            Check In
-          </Button>
-        ) : (
-          <Button onPress={handleJoinEvent} variant="primary">
-            Join Event
-          </Button>
-        )}
+        <Button
+          variant="primary"
+          onPress={() => {
+            // Phase 1: navigation-only, no backend check-in
+            router.push(`/checkin?eventId=${event.id}`);
+          }}
+        >
+          Go to Check-in (Phase 1 nav)
+        </Button>
+
+        <Button variant="secondary" onPress={() => router.back()}>
+          Back
+        </Button>
       </View>
     </View>
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <Text
-      style={{
-        fontSize: 12,
-        fontWeight: '600',
-        color: colors.neutral[500],
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-      }}
-      className="mb-2"
-    >
-      {title}
-    </Text>
-  );
-}
+export default EventDetailScreen;

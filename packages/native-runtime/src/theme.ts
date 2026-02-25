@@ -1,13 +1,13 @@
 // packages/native-runtime/src/theme.ts
 
 import { ColorSchemeName } from "react-native";
+import { progressTokens, glassTokens } from "@yombri/design-tokens";
 
 import {
   colors,
   spacing,
   radius,
   typography,
-  type ColorTokens,
   type SpacingTokens,
   type RadiusTokens,
   type TypographyTokens,
@@ -28,6 +28,13 @@ export type Theme = {
   colors: SemanticColors & {
     neutral: typeof colors.neutral;
     brand: typeof colors.brand;
+
+    // Phase 1 glass + progress extensions (token-driven)
+    progressTrack: string;
+    progressActive: string;
+    backgroundGlass: string;
+    backgroundOverlay: string;
+    borderSubtle: string;
   };
   spacing: SpacingTokens;
   radius: RadiusTokens;
@@ -56,6 +63,13 @@ export function resolveTheme(
       ...semanticColors,
       neutral: colors.neutral,
       brand: colors.brand,
+
+      // New semantic slots used by glass surfaces & progress ring
+      progressTrack: progressTokens[effectiveMode].track,
+      progressActive: progressTokens[effectiveMode].active,
+      backgroundGlass: glassTokens[effectiveMode].backgroundOverlay,
+      backgroundOverlay: glassTokens[effectiveMode].imageOverlay,
+      borderSubtle: glassTokens[effectiveMode].border,
     },
     spacing,
     radius,

@@ -8,33 +8,34 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": false,
-
     // Module resolution
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-
     // Source / output
     "jsx": "react-native",
     "baseUrl": "./",
     "rootDir": "./",
     "paths": {
-      "@logic/*": ["src/logic/*"],
-      "@utils/*": ["src/utils/*"],
-      "@yombri/design-tokens": ["../../packages/design-tokens/src"],
-      "@yombri/native-runtime": ["../../packages/native-runtime/src"],
-      "@yombri/supabase-client": ["../../packages/supabase-client/src"]
-    },
+  "@/*": ["./*"],
 
+  "@logic/*": ["src/logic/*"],
+  "@utils/*": ["src/utils/*"],
+
+  "@yombri/design-tokens": ["../../packages/design-tokens/src"],
+  "@yombri/native-runtime": ["../../packages/native-runtime/src"],
+  "@yombri/supabase-client": ["../../packages/supabase-client/src"]
+},
     // Emit options (Jest / Expo both transpile; we usually don’t emit from tsc)
     "noEmit": true
   },
   "include": [
     "src",
     "app",
-    "jest.config.ts"
+    "jest.config.ts",
+    "nativewind-env.d.ts"
   ],
   "exclude": [
     "node_modules",
