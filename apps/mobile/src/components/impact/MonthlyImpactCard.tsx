@@ -1,45 +1,47 @@
 // apps/mobile/src/components/impact/MonthlyImpactCard.tsx
-import React from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { GlassCard } from '../layout/GlassCard';
-import { RadialProgress } from './RadialProgress';
-import { useTheme } from '../../providers/ThemeProvider';
-import { spacing, radius, typography, radiusExtensions } from '@yombri/design-tokens';
+import React from "react";
+import { StyleSheet, Text, View, ViewStyle } from "react-native";
+import { GlassCard } from "../layout/GlassCard";
+import { RadialProgress } from "./RadialProgress";
+import { useTheme } from "../../providers/ThemeProvider";
+import { spacing, typography, radiusExtensions } from "@yombri/design-tokens";
+import { Chip } from "../primitives/Chip";
 
-interface Chip {
+interface ChipItem {
   key: string;
   label: string;
 }
 
-const DEFAULT_CHIPS: Chip[] = [
-  { key: 'all',        label: 'All' },
-  { key: 'events',     label: 'Events' },
-  { key: 'volunteer',  label: 'Volunteer' },
-  { key: 'donations',  label: 'Donations' },
+const DEFAULT_CHIPS: ChipItem[] = [
+  { key: "all", label: "All" },
+  { key: "events", label: "Events" },
+  { key: "volunteer", label: "Volunteer" },
+  { key: "donations", label: "Donations" },
 ];
 
 interface MonthlyImpactCardProps {
-  title?:        string;
-  subtitle?:     string;
-  progress?:     number;
-  chips?:        Chip[];
-  activeChip?:   string;
-  onChipPress?:  (key: string) => void;
-  style?:        ViewStyle;
+  title?: string;
+  subtitle?: string;
+  progress?: number;
+  chips?: ChipItem[];
+  activeChip?: string;
+  onChipPress?: (key: string) => void;
+  style?: ViewStyle;
 }
 
 export function MonthlyImpactCard({
-  title      = 'Monthly Impact',
-  subtitle   = 'February 2026',
-  progress   = 0,
-  chips      = DEFAULT_CHIPS,
-  activeChip = 'all',
+  title = "Monthly Impact",
+  subtitle = "February 2026",
+  progress = 0,
+  chips = DEFAULT_CHIPS,
+  activeChip = "all",
   onChipPress,
   style,
 }: MonthlyImpactCardProps) {
   const { theme } = useTheme();
   const c = theme.colors;
 
+  // If Chip already uses full radius, this is just a guardrail for layout consistency.
   const chipPillRadius = radiusExtensions.full;
 
   return (
@@ -58,34 +60,18 @@ export function MonthlyImpactCard({
         {progress}% complete
       </Text>
 
-      {/* Chip filter row */}
+      {/* Chip filter row (single-select) */}
       <View style={styles.chipRow}>
         {chips.map((chip) => {
-          const active = chip.key === activeChip;
+          const selected = chip.key === activeChip;
           return (
-            <Pressable
+            <Chip
               key={chip.key}
+              label={chip.label}
+              selected={selected}
               onPress={() => onChipPress?.(chip.key)}
-              style={[
-                styles.chip,
-                {
-                  borderRadius:    chipPillRadius,
-                  backgroundColor: active ? c.primary     : (c.surfaceVariant ?? c.surface),
-                  borderColor:     active ? c.primary     : (c.borderSubtle   ?? c.outline),
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-            >
-              <Text
-                style={[
-                  styles.chipLabel,
-                  { color: active ? (c.onPrimary ?? c.onSurface) : c.onSurfaceVariant },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </Pressable>
+              style={{ borderRadius: chipPillRadius }}
+            />
           );
         })}
       </View>
@@ -95,48 +81,38 @@ export function MonthlyImpactCard({
 
 const styles = StyleSheet.create({
   headerRow: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-    marginBottom:   spacing.gap.sm,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.gap.sm,
   },
   headerText: {
-    flex:        1,
+    flex: 1,
     marginRight: spacing.gap.md,
   },
   title: {
-    fontFamily:  typography.heading.md.fontFamily,
-    fontSize:    typography.heading.md.fontSize,
-    lineHeight:  typography.heading.md.lineHeight,
-    fontWeight:  '600',
+    fontFamily: typography.heading.md.fontFamily,
+    fontSize: typography.heading.md.fontSize,
+    lineHeight: typography.heading.md.lineHeight,
+    fontWeight: "600",
   },
   subtitle: {
-    fontFamily:  typography.label.md.fontFamily,
-    fontSize:    typography.label.md.fontSize,
-    lineHeight:  typography.label.md.lineHeight,
-    fontWeight:  '400',
-    marginTop:   spacing.gap.xs,
+    fontFamily: typography.label.md.fontFamily,
+    fontSize: typography.label.md.fontSize,
+    lineHeight: typography.label.md.lineHeight,
+    fontWeight: "400",
+    marginTop: spacing.gap.xs,
   },
   progressLabel: {
-    fontFamily:   typography.label.md.fontFamily,
-    fontSize:     typography.label.md.fontSize,
-    lineHeight:   typography.label.md.lineHeight,
-    fontWeight:   '600',
+    fontFamily: typography.label.md.fontFamily,
+    fontSize: typography.label.md.fontSize,
+    lineHeight: typography.label.md.lineHeight,
+    fontWeight: "600",
     marginBottom: spacing.gap.md,
   },
   chipRow: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           spacing.gap.xs,
-  },
-  chip: {
-    paddingHorizontal: spacing.gap.md,
-    paddingVertical:   spacing.gap.xs,
-    borderWidth:       1,
-  },
-  chipLabel: {
-    fontFamily:  typography.label.md.fontFamily,
-    fontSize:    typography.label.md.fontSize,
-    fontWeight:  '500',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.gap.xs,
   },
 });

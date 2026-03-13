@@ -8,20 +8,16 @@ function getAppName() {
 }
 
 function getBundleId() {
-  // If you want dev/prod side-by-side later, change dev suffix here
   return 'com.yombri.app';
-  // e.g. return IS_DEV ? 'com.yombri.app.dev' : 'com.yombri.app';
 }
 
 function getAndroidPackage() {
   return 'com.yombri.app';
-  // e.g. return IS_DEV ? 'com.yombri.app.dev' : 'com.yombri.app';
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  jsEngine: "hermes",
-
+  jsEngine: 'hermes',
   name: getAppName(),
   slug: 'yombri',
   version: '0.0.1',
@@ -35,42 +31,24 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     backgroundColor: '#ffffff',
   },
 
-  splash: {
-    image: './assets/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#ffffff',
-  },
-  
   assetBundlePatterns: ['**/*'],
 
   ios: {
     ...(config.ios ?? {}),
     supportsTablet: true,
     bundleIdentifier: getBundleId(),
-
-    // Export compliance
     config: {
       usesNonExemptEncryption: false,
     },
-
     infoPlist: {
-      // Explicit encryption flag
+      ...(config.ios?.infoPlist ?? {}),
       ITSAppUsesNonExemptEncryption: false,
-
-      // Location – required for foreground geo check-in [web:34][web:35]
       NSLocationWhenInUseUsageDescription:
         'Yombri needs your location to verify that you are at an event for check-in.',
-
-      // If you ever enable background/location-always flows, keep this.
-      // Otherwise you can remove it later.
       NSLocationAlwaysAndWhenInUseUsageDescription:
-        'Yombri may use your location at events to verify check-ins, even when running in the background.',
-
-      // Camera – for QR scanning [web:42]
+        'Yombri may use your location during events to verify check-ins.',
       NSCameraUsageDescription:
         'Yombri needs access to your camera to scan QR codes for event check-in.',
-
-      // Bluetooth – optional enhancement for Magic presence
       NSBluetoothAlwaysUsageDescription:
         'Yombri may use Bluetooth to detect nearby event organizers for easier check-in.',
       NSBluetoothPeripheralUsageDescription:
@@ -80,12 +58,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   android: {
     ...(config.android ?? {}),
+    package: getAndroidPackage(),
     adaptiveIcon: {
+      ...(config.android?.adaptiveIcon ?? {}),
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
-    package: getAndroidPackage(),
-    // If you need explicit permissions later, use android.permissions [web:60].
   },
 
   web: {
@@ -99,14 +77,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     APP_VARIANT,
     eas: {
-      projectId: '54d31f85-6ed9-4a64-a55f-f465640cfc40'  // ← ADD THIS
-    }
+      projectId: '54d31f85-6ed9-4a64-a55f-f465640cfc40',
+    },
   },
 
   plugins: [
     'expo-router',
-
-    // Location plugin: wires native permissions/messages for iOS + Android [web:35][web:54]
     [
       'expo-location',
       {
@@ -116,8 +92,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           'Yombri may use your location during events to verify check-ins.',
       },
     ],
-
-    // Camera plugin: customizable permission text [web:42][web:39]
     [
       'expo-camera',
       {

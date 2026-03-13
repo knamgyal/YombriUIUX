@@ -1,7 +1,9 @@
-import { getSupabaseClient, getCurrentUserId } from '../client';
+import type { RealtimeChannel as SupabaseRealtimeChannel } from '@supabase/supabase-js';
+import { getCurrentUserId, getSupabaseClient } from '../client';
+import type { Message } from '../types/social';
 
-export interface RealtimeChannel {
-  channel: any;
+export interface RealtimeChannelHandle {
+  channel: SupabaseRealtimeChannel;
   unsubscribe: () => void;
 }
 
@@ -9,31 +11,70 @@ function isTestEnv(): boolean {
   return typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 }
 
-export async function joinEventChannel(eventId: string): Promise<RealtimeChannel> {
+export function joinGroupMessagesChannel(
+  groupId: string,
+  onInsert: (message: Message) => void
+): RealtimeChannelHandle {
   const client = getSupabaseClient();
-  const userId = await getCurrentUserId();
+  const channelName = `group:${groupId}:messages`;
 
-  if (!userId) {
-    throw new Error('Must be authenticated');
-  }
-
-  const channelName = `event:${eventId}:messages`;
-  const channel = client.channel(channelName, { params: { event_id: eventId } });
-
-  channel.subscribe((status: string) => {
-    // Silence logs in tests; keep runtime log if you still want it.
-    if (!isTestEnv() && status === 'SUBSCRIBED') {
-      // eslint-disable-next-line no-console
-      console.log(`Joined ${channelName}`);
-    }
-  });
+  const channel = client
+    .channel(channelName)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `group_id=eq.${groupId}`,
+      },
+      (payload) => {
+        onInsert(payload.new as Message);
+      }
+    )
+    .subscribe((status) => {
+      if (!isTestEnv() && status === 'SUBSCRIBED') {
+        console.log(`Joined ${channelName}`);
+      }
+    });
 
   return {
     channel,
-    unsubscribe: () => channel.unsubscribe(),
+    unsubscribe: () => {
+      void channel.unsubscribe();
+    },
   };
 }
 
-export function leaveChannel(channel: any): void {
-  channel.unsubscribe();
+export async function joinEventChannel(
+  eventId: string,
+  onInsert: (message: Message) => void = () => {}
+): Promise<RealtimeChannelHandle> {
+  const actorId = await getCurrentUserId();
+
+  if (!actorId) {
+    throw new Error('Must be authenticated');
+  }
+
+  const client = getSupabaseClient();
+  const channelName = `event:${eventId}`;
+
+  const channel = client
+    .channel(channelName)
+    .subscribe((status) => {
+      if (!isTestEnv() && status === 'SUBSCRIBED') {
+        console.log(`Joined ${channelName}`);
+      }
+    });
+
+  return {
+    channel,
+    unsubscribe: () => {
+      void channel.unsubscribe();
+    },
+  };
+}
+
+export function leaveChannel(channel: SupabaseRealtimeChannel): void {
+  void channel.unsubscribe();
 }

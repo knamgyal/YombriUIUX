@@ -1,4 +1,3 @@
-import React from "react";
 import { Stack } from "expo-router";
 
 export default function DebugLayout() {
@@ -6,10 +5,9 @@ export default function DebugLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
+        title: "Debug",
+        contentStyle: { backgroundColor: "black" },
       }}
-    >
-      <Stack.Screen name="tokens" options={{ title: "Tokens" }} />
-      <Stack.Screen name="phase1-audit" options={{ title: "Phase 1 Audit" }} />
-    </Stack>
+    />
   );
 }

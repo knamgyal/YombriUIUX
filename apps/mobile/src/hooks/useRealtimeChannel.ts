@@ -1,16 +1,18 @@
-import { useEffect, useRef } from 'react';
-import { onNewEventMessage } from '@yombri/supabase-client';
+import { useEffect } from 'react';
+import { onNewGroupMessage } from '@yombri/supabase-client';
+import type { Message } from '@yombri/supabase-client';
 
-export function useEventMessages(eventId: string, onNewMessage: (message: any) => void) {
-  const unsubscribeRef = useRef<(() => void) | null>(null);
-
+export function useEventMessages(
+  groupId: string | undefined,
+  onNewMessage: (message: Message) => void
+) {
   useEffect(() => {
-    unsubscribeRef.current = onNewEventMessage(eventId, onNewMessage);
+    if (!groupId) return;
+
+    const sub = onNewGroupMessage(groupId, onNewMessage);
 
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
+      sub.unsubscribe();
     };
-  }, [eventId, onNewMessage]);
+  }, [groupId, onNewMessage]);
 }

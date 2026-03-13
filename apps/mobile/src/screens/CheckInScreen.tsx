@@ -1,14 +1,17 @@
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CameraView } from 'expo-camera';
+import { useNetInfo } from '@react-native-community/netinfo';
+
 import { Button } from '@yombri/native-runtime';
-import { colors, spacing, typography } from '@yombri/design-tokens';
-import { supabaseClient } from '@yombri/supabase-client';
+import { typography } from '@yombri/design-tokens';
+import { verifyCheckin, verifyCheckinTotp } from '@yombri/supabase-client';
+
+import { useTheme } from '../providers/ThemeProvider';
 import { useLocation } from '../hooks/useLocation';
 import { useCamera } from '../hooks/useCamera';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { useNetInfo } from '@react-native-community/netinfo';
 
 type CheckInMethod = 'magic' | 'totp' | 'qr';
 
@@ -17,33 +20,51 @@ export function CheckInScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const netInfo = useNetInfo();
   const { trackEvent } = useAnalytics();
-  
-  const { status: locationStatus, getCurrentLocation, requestPermission: requestLocation } = useLocation();
-  const { status: cameraStatus, requestPermission: requestCamera } = useCamera();
-  
+  const { theme } = useTheme();
+
+  const {
+    status: locationStatus,
+    getCurrentLocation,
+    requestPermission: requestLocation,
+  } = useLocation();
+
+  const {
+    status: cameraStatus,
+    requestPermission: requestCamera,
+  } = useCamera();
+
   const [method, setMethod] = useState<CheckInMethod>('magic');
   const [isChecking, setIsChecking] = useState(false);
   const [totpCode, setTotpCode] = useState('');
   const [scanningQR, setScanningQR] = useState(false);
   const [searchingSignal, setSearchingSignal] = useState(false);
 
+  const c = theme.colors;
+
   useEffect(() => {
     if (method === 'magic') {
-      initiateSignalSearch();
+      void initiateSignalSearch();
     }
   }, [method]);
 
   const initiateSignalSearch = async () => {
     setSearchingSignal(true);
-    
-    if (locationStatus !== 'granted') {
-      await requestLocation();
+
+    try {
+      if (locationStatus !== 'granted') {
+        await requestLocation();
+      }
+    } finally {
+      setTimeout(() => setSearchingSignal(false), 2000);
     }
-    
-    setTimeout(() => setSearchingSignal(false), 2000);
   };
 
   const handleMagicCheckIn = async () => {
+    if (!eventId) {
+      Alert.alert('Missing event', 'No event id was provided for check-in.');
+      return;
+    }
+
     trackEvent({ type: 'checkin_attempt', eventId, method: 'geo' });
     setIsChecking(true);
 
@@ -53,43 +74,44 @@ export function CheckInScreen() {
     }
 
     try {
-      const result = await supabaseClient.checkin.verifyCheckIn({
+      const result = await verifyCheckin({
         eventId,
-        location: location
-          ? {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-              accuracy: location.coords.accuracy || undefined,
-            }
-          : undefined,
+        lat: location?.coords?.latitude,
+        lng: location?.coords?.longitude,
       });
 
       if (result.success) {
-        trackEvent({ 
-          type: 'checkin_success', 
-          eventId, 
-          method: result.offline ? 'offline' : 'geo' 
+        trackEvent({
+          type: 'checkin_success',
+          eventId,
+          method: result.offline ? 'offline' : 'geo',
         });
         router.replace(`/impact-moment?eventId=${eventId}`);
       } else {
-        trackEvent({ 
-          type: 'checkin_failure', 
-          eventId, 
-          method: 'geo', 
-          reason: result.error || 'unknown' 
+        trackEvent({
+          type: 'checkin_failure',
+          eventId,
+          method: 'geo',
+          reason: result.error || 'unknown',
         });
-        
+
         if (netInfo.isConnected === false) {
           Alert.alert(
             'Offline Check-In',
             'You appear to be offline. Check-in has been queued and will sync when you are back online.',
-            [{ text: 'OK', onPress: () => router.replace(`/impact-moment?eventId=${eventId}&offline=true`) }]
+            [
+              {
+                text: 'OK',
+                onPress: () =>
+                  router.replace(`/impact-moment?eventId=${eventId}&offline=true`),
+              },
+            ]
           );
         } else {
           Alert.alert('Check-In Failed', result.error || 'Please try manual code instead.');
         }
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Network error. Check-in has been queued for offline sync.');
       router.replace(`/impact-moment?eventId=${eventId}&offline=true`);
     } finally {
@@ -98,6 +120,11 @@ export function CheckInScreen() {
   };
 
   const handleTOTPCheckIn = async () => {
+    if (!eventId) {
+      Alert.alert('Missing event', 'No event id was provided for check-in.');
+      return;
+    }
+
     if (totpCode.length !== 6) {
       Alert.alert('Invalid Code', 'Please enter the 6-digit code.');
       return;
@@ -107,23 +134,24 @@ export function CheckInScreen() {
     setIsChecking(true);
 
     try {
-      const result = await supabaseClient.checkin.verifyCheckInTotp({
+      const result = await verifyCheckinTotp({
         eventId,
-        code: totpCode,
+        code: Number(totpCode),
+        clientTime: new Date().toISOString(),
       });
 
       if (result.success) {
         trackEvent({ type: 'checkin_success', eventId, method: 'totp' });
         router.replace(`/impact-moment?eventId=${eventId}`);
       } else {
-        trackEvent({ 
-          type: 'checkin_failure', 
-          eventId, 
-          method: 'totp', 
-          reason: result.error || 'unknown' 
+        trackEvent({
+          type: 'checkin_failure',
+          eventId,
+          method: 'totp',
+          reason: result.error || 'unknown',
         });
 
-        if (result.error?.includes('cooldown')) {
+        if (result.error?.toLowerCase().includes('cooldown')) {
           Alert.alert(
             'Too Many Attempts',
             'Please wait 5 minutes before trying again.',
@@ -133,7 +161,7 @@ export function CheckInScreen() {
           Alert.alert('Invalid Code', result.error || 'Please check the code and try again.');
         }
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Network error. Please try again.');
     } finally {
       setIsChecking(false);
@@ -142,29 +170,34 @@ export function CheckInScreen() {
   };
 
   const handleQRScan = async (data: string) => {
+    if (!eventId) {
+      Alert.alert('Missing event', 'No event id was provided for check-in.');
+      return;
+    }
+
     setScanningQR(false);
     trackEvent({ type: 'checkin_attempt', eventId, method: 'qr' });
     setIsChecking(true);
 
     try {
-      const result = await supabaseClient.checkin.verifyCheckIn({
+      const result = await verifyCheckin({
         eventId,
-        token: data,
+        eventToken: data,
       });
 
       if (result.success) {
         trackEvent({ type: 'checkin_success', eventId, method: 'qr' });
         router.replace(`/impact-moment?eventId=${eventId}`);
       } else {
-        trackEvent({ 
-          type: 'checkin_failure', 
-          eventId, 
-          method: 'qr', 
-          reason: result.error || 'unknown' 
+        trackEvent({
+          type: 'checkin_failure',
+          eventId,
+          method: 'qr',
+          reason: result.error || 'unknown',
         });
         Alert.alert('Invalid QR Code', result.error || 'Please try again.');
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Network error. Please try again.');
     } finally {
       setIsChecking(false);
@@ -182,24 +215,32 @@ export function CheckInScreen() {
         return;
       }
     }
+
     setScanningQR(true);
   };
 
   if (scanningQR) {
     return (
-      <View className="flex-1" style={{ backgroundColor: colors.neutral[900] }}>
+      <View style={{ flex: 1, backgroundColor: c.background }}>
         <CameraView
           style={{ flex: 1 }}
-          barcodeScannerSettings={{
-            barcodeTypes: ['qr'],
-          }}
+          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
           onBarcodeScanned={(result) => {
             if (result.data) {
-              handleQRScan(result.data);
+              void handleQRScan(result.data);
             }
           }}
         />
-        <View className="absolute bottom-0 left-0 right-0 p-6 items-center">
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: 24,
+            alignItems: 'center',
+          }}
+        >
           <Button onPress={() => setScanningQR(false)} variant="secondary">
             Cancel
           </Button>
@@ -209,53 +250,57 @@ export function CheckInScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.neutral[50] }}>
-      <View className="flex-1 justify-center" style={{ padding: spacing.grid }}>
+    <View style={{ flex: 1, backgroundColor: c.background }}>
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
         {method === 'magic' && (
           <View>
             <Text
               style={{
                 fontSize: 24,
                 fontWeight: '700',
-                color: colors.neutral[900],
+                color: c.onBackground,
                 textAlign: 'center',
+                marginBottom: 16,
               }}
-              className="mb-4"
             >
               {searchingSignal ? 'Searching for check-in signal...' : 'Ready to Check In'}
             </Text>
 
             <Text
               style={{
-                fontSize: typography.body.size,
-                color: colors.neutral[600],
+                fontSize: typography.body.md.fontSize,
+                lineHeight: typography.body.md.lineHeight,
+                color: c.onSurfaceVariant,
                 textAlign: 'center',
+                marginBottom: 32,
               }}
-              className="mb-8"
             >
-              {searchingSignal 
+              {searchingSignal
                 ? 'Looking for location signal'
                 : locationStatus === 'granted'
-                ? 'Tap to confirm your presence'
-                : 'Location permission required for auto check-in'}
+                  ? 'Tap to confirm your presence'
+                  : 'Location permission required for auto check-in'}
             </Text>
 
             {searchingSignal ? (
-              <ActivityIndicator size="large" color={colors.brand.emerald} />
+              <ActivityIndicator size="large" color={c.primary} />
             ) : (
               <>
                 <Button
                   onPress={handleMagicCheckIn}
                   disabled={isChecking}
                   variant="primary"
-                  className="mb-4"
                 >
                   {isChecking ? 'Checking In...' : 'Check In Now'}
                 </Button>
 
-                <Button onPress={openQRScanner} variant="secondary" className="mb-2">
+                <View style={{ height: 12 }} />
+
+                <Button onPress={openQRScanner} variant="secondary">
                   Scan QR Code
                 </Button>
+
+                <View style={{ height: 8 }} />
 
                 <Button onPress={() => setMethod('totp')} variant="secondary">
                   Use Manual Code
@@ -271,21 +316,22 @@ export function CheckInScreen() {
               style={{
                 fontSize: 24,
                 fontWeight: '700',
-                color: colors.neutral[900],
+                color: c.onBackground,
                 textAlign: 'center',
+                marginBottom: 16,
               }}
-              className="mb-4"
             >
               Enter Manual Code
             </Text>
 
             <Text
               style={{
-                fontSize: typography.body.size,
-                color: colors.neutral[600],
+                fontSize: typography.body.md.fontSize,
+                lineHeight: typography.body.md.lineHeight,
+                color: c.onSurfaceVariant,
                 textAlign: 'center',
+                marginBottom: 32,
               }}
-              className="mb-8"
             >
               Ask the organizer for the 6-digit code
             </Text>
@@ -296,27 +342,29 @@ export function CheckInScreen() {
               keyboardType="number-pad"
               maxLength={6}
               placeholder="000000"
+              placeholderTextColor={c.onSurfaceVariant}
               style={{
                 fontSize: 32,
                 fontWeight: '700',
                 textAlign: 'center',
-                color: colors.neutral[900],
-                backgroundColor: colors.neutral[100],
+                color: c.onSurface,
+                backgroundColor: c.surfaceVariant,
                 borderRadius: 12,
                 padding: 20,
                 letterSpacing: 8,
+                marginBottom: 24,
               }}
-              className="mb-6"
             />
 
             <Button
               onPress={handleTOTPCheckIn}
               disabled={isChecking || totpCode.length !== 6}
               variant="primary"
-              className="mb-4"
             >
               {isChecking ? 'Verifying...' : 'Verify Code'}
             </Button>
+
+            <View style={{ height: 16 }} />
 
             <Button onPress={() => setMethod('magic')} variant="secondary">
               Back to Auto Check-In
@@ -327,3 +375,5 @@ export function CheckInScreen() {
     </View>
   );
 }
+
+export default CheckInScreen;

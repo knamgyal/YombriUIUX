@@ -9,6 +9,7 @@
       "distribution": "internal",
       "env": {
         "APP_VARIANT": "development",
+        "EXPO_PUBLIC_DATA_SOURCE": "supabase",
         "EXPO_PUBLIC_SUPABASE_URL": "https://yvcyfvzkbdywcdweolwq.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_5H27Rrq6CJaARcrr9qEyCQ_1q7d-Gq_"
       },

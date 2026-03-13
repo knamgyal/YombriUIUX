@@ -1,11 +1,29 @@
 // apps/mobile/app/(tabs)/checkin.tsx
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 
-import { View, Text } from "react-native";
-import { Stack } from "expo-router";
 import { useTheme } from "../../src/providers/ThemeProvider";
+import { spacing, typography, radius } from "@yombri/design-tokens";
+
+import { GlassCard } from "../../src/components/layout/GlassCard";
+import { Button } from "../../src/components/primitives/Button";
+
+type Params = { eventId?: string | string[] };
+
+function normalizeParam(v?: string | string[]) {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v[0];
+  return undefined;
+}
 
 export default function CheckInScreen() {
+  const router = useRouter();
   const { theme } = useTheme();
+  const c = theme.colors;
+
+  const params = useLocalSearchParams<Params>();
+  const eventId = normalizeParam(params.eventId);
 
   return (
     <>
@@ -13,77 +31,88 @@ export default function CheckInScreen() {
         options={{
           headerShown: true,
           title: "Check In",
-          headerStyle: {
-            backgroundColor: theme.colors.surface,
-          },
-          headerTintColor: theme.colors.text,
+          headerStyle: { backgroundColor: c.surface },
+          headerTintColor: c.onSurface,
           headerShadowVisible: false,
         }}
       />
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-          padding: theme.spacing.md,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: theme.colors.surface,
-            padding: theme.spacing.xl,
-            borderRadius: theme.radius.lg,
-            alignItems: "center",
-            maxWidth: 400,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: theme.typography.heading.fontSize,
-              fontWeight: theme.typography.heading.fontWeight as any,
-              color: theme.colors.text,
-              marginBottom: theme.spacing.sm,
-              textAlign: "center",
-            }}
-          >
-            Check-In
-          </Text>
-          <Text
-            style={{
-              color: theme.colors.textMuted,
-              textAlign: "center",
-              marginBottom: theme.spacing.lg,
-            }}
-          >
-            Verification flows (Magic + Manual) will be implemented in Phase 3
+
+      <View style={[styles.container, { backgroundColor: c.background }]}>
+        <GlassCard padding={spacing.gap.lg} style={styles.card}>
+          <Text style={[styles.title, { color: c.onSurface }]}>Check-in</Text>
+
+          <Text style={[styles.body, { color: c.onSurfaceVariant }]}>
+            Phase 1 stub screen to validate navigation + theming.
           </Text>
 
-          {/* Phase 3 will include:
-              - "Searching for check-in signal..." state
-              - Magic check-in via Geo/BLE
-              - Manual TOTP fallback
-              - Offline queue handling
-          */}
+          <View style={{ height: spacing.gap.sm }} />
 
           <View
-            style={{
-              width: "100%",
-              padding: theme.spacing.md,
-              backgroundColor: theme.colors.surfaceMuted,
-              borderRadius: theme.radius.md,
-            }}
+            style={[
+              styles.metaBox,
+              {
+                backgroundColor: c.surfaceVariant,
+                borderColor: c.borderSubtle ?? c.outline ?? c.surfaceVariant,
+              },
+            ]}
           >
-            <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>
-              Phase 3 components:{"\n"}
-              • Location-based verification{"\n"}
-              • Visual TOTP input{"\n"}
-              • Offline sync queue{"\n"}
-              • Impact moment reveal
+            <Text style={[styles.meta, { color: c.onSurfaceVariant }]}>
+              eventId: {eventId ?? "(missing)"}
+            </Text>
+            <Text style={[styles.meta, { color: c.onSurfaceVariant }]}>
+              Phase 3 will implement Magic + Manual verification.
             </Text>
           </View>
-        </View>
+
+          <View style={{ height: spacing.gap.md }} />
+
+          <Button variant="secondary" onPress={() => router.back()}>
+            Back
+          </Button>
+
+          <View style={{ height: spacing.gap.sm }} />
+
+          <Button onPress={() => router.replace("/(debug)/phase1-audit")}>
+            Back to Phase 1 Audit
+          </Button>
+        </GlassCard>
       </View>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.screen.xs,
+    justifyContent: "center",
+  },
+  card: {
+    borderRadius: radius.lg,
+  },
+  title: {
+    fontFamily: typography.heading.md.fontFamily,
+    fontSize: typography.heading.md.fontSize,
+    lineHeight: typography.heading.md.lineHeight,
+    fontWeight: "700",
+    marginBottom: spacing.gap.xs,
+  },
+  body: {
+    fontFamily: typography.body.md.fontFamily,
+    fontSize: typography.body.md.fontSize,
+    lineHeight: typography.body.md.lineHeight,
+    fontWeight: "400",
+  },
+  metaBox: {
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.gap.md,
+    gap: spacing.gap.xs,
+  },
+  meta: {
+    fontFamily: typography.label.md.fontFamily,
+    fontSize: typography.label.md.fontSize,
+    lineHeight: typography.label.md.lineHeight,
+    fontWeight: "400",
+  },
+});

@@ -24,6 +24,8 @@
     "@yombri/design-tokens": "workspace:*",
     "@yombri/native-runtime": "workspace:*",
     "@yombri/supabase-client": "workspace:*",
+    "@yombri/domain": "workspace:*",
+    "@yombri/data": "workspace:*",
     "buffer": "^6.0.3",
     "expo": "~52.0.49",
     "expo-blur": "~14.0.3",

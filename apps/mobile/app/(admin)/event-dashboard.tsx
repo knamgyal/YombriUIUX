@@ -1,74 +1,97 @@
 import { useEffect, useState } from 'react';
 import { View, FlatList, Text, Alert } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Button } from '@/src/components/primitives/Button';
-import { TOTPDisplay } from '@/src/components/TOTPDisplay';
-import { QRDisplay } from '@/src/components/QRDisplay';
-import { EjectButton } from '@/src/components/EjectButton';
-import { OrganizerDashboardScreen } from '../../src/screens/OrganizerDashboardScreen';
-import { getSupabaseClient } from '@yombri/supabase-client';
-import type { SupabaseParticipant } from '@yombri/supabase-client'; // Assuming participant type
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
-// Enhanced dashboard with ejection (Phase 4.4)
+import { Button } from '@/src/components/primitives/Button';
+import TOTPDisplay from '@/src/components/TOTPDisplay';
+import QRDisplay from '@/src/components/QRDisplay';
+import { EjectButton } from '@/src/components/EjectButton';
+import { getSupabaseClient } from '@yombri/supabase-client';
+
+type ParticipantRow = {
+  event_id: string;
+  user_id: string;
+  status: string;
+  checked_in_at?: string | null;
+};
+
 export default function EnhancedOrganizerDashboard() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
-  const [participants, setParticipants] = useState<SupabaseParticipant[]>([]);
+  const router = useRouter();
+
+  const [participants, setParticipants] = useState<ParticipantRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadParticipants = async () => {
-    if (!eventId) return;
-    
-    const client = getSupabaseClient();
-    const { data, error } = await client
-      .from('event_participants')
-      .select(`
-        *,
-        profiles!user_id (
-          id,
-          full_name,
-          avatar_url
-        )
-      `)
-      .eq('event_id', eventId)
-      .eq('status', 'joined')
-      .order('checked_in_at', { ascending: false });
-
-    if (error) {
-      console.error('Failed to load participants:', error);
-    } else {
-      setParticipants(data || []);
+    if (!eventId) {
+      setParticipants([]);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+
+    try {
+      const client = getSupabaseClient();
+      const { data, error } = await client
+        .from('event_participants')
+        .select('event_id, user_id, status, checked_in_at')
+        .eq('event_id', eventId)
+        .eq('status', 'joined')
+        .order('checked_in_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to load participants:', error);
+        setParticipants([]);
+      } else {
+        setParticipants((data ?? []) as ParticipantRow[]);
+      }
+    } catch (err) {
+      console.error('Failed to load participants:', err);
+      setParticipants([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadParticipants();
+    void loadParticipants();
   }, [eventId]);
 
   const handleEjectSuccess = () => {
     Alert.alert('Ejected', 'Participant removed from event.');
-    loadParticipants();
+    void loadParticipants();
   };
 
+  if (!eventId) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <Text>Missing eventId</Text>
+      </View>
+    );
+  }
+
   return (
-    <View className="flex-1 bg-background">
-      {/* Existing Phase 3: TOTP + QR */}
-      <View className="p-6 bg-muted/50 border-b">
-        <Text className="text-2xl font-bold text-center mb-6">Event Dashboard</Text>
-        <TOTPDisplay eventId={eventId as string} />
-        <QRDisplay eventId={eventId as string} />
+    <View style={{ flex: 1 }}>
+      <View style={{ padding: 24, borderBottomWidth: 1 }}>
+        <Text style={{ fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 24 }}>
+          Event Dashboard
+        </Text>
+
+        <TOTPDisplay eventId={eventId} />
+        <View style={{ height: 16 }} />
+        <QRDisplay eventId={eventId} />
       </View>
 
-      {/* NEW Phase 4.4: Participants + Eject */}
-      <View className="flex-1">
-        <View className="p-4 border-b">
-          <Text className="text-lg font-semibold">
+      <View style={{ flex: 1 }}>
+        <View style={{ padding: 16, borderBottomWidth: 1 }}>
+          <Text style={{ fontSize: 18, fontWeight: '600' }}>
             Participants ({participants.length})
           </Text>
         </View>
 
         {loading ? (
-          <View className="flex-1 justify-center items-center">
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Text>Loading participants...</Text>
           </View>
         ) : (
@@ -76,43 +99,48 @@ export default function EnhancedOrganizerDashboard() {
             data={participants}
             keyExtractor={(item) => item.user_id}
             renderItem={({ item }) => (
-              <View className="flex-row items-center justify-between p-4 border-b">
-                <View className="flex-1">
-                  <Text className="font-semibold text-base">
-                    {item.profiles?.full_name || `User ${item.user_id.slice(-6)}`}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                  borderBottomWidth: 1,
+                }}
+              >
+                <View style={{ flex: 1, paddingRight: 12 }}>
+                  <Text style={{ fontWeight: '600', fontSize: 16 }}>
+                    User {item.user_id.slice(-6)}
                   </Text>
-                  <Text className="text-sm text-muted-foreground">
-                    Checked in: {item.checked_in_at ? 
-                      new Date(item.checked_in_at).toLocaleString() : 
-                      'Pending'
-                    }
+                  <Text style={{ fontSize: 14, opacity: 0.7 }}>
+                    Checked in:{' '}
+                    {item.checked_in_at
+                      ? new Date(item.checked_in_at).toLocaleString()
+                      : 'Pending'}
                   </Text>
                 </View>
+
                 <EjectButton
-                  eventId={eventId as string}
+                  eventId={eventId}
                   userId={item.user_id}
-                  userName={item.profiles?.full_name || 'Attendee'}
+                  userName={`User ${item.user_id.slice(-6)}`}
                   onEject={handleEjectSuccess}
                 />
               </View>
             )}
             ListEmptyComponent={
-              <View className="flex-1 justify-center items-center p-8">
-                <Text className="text-muted-foreground">No participants yet</Text>
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+                <Text>No participants yet</Text>
               </View>
             }
           />
         )}
       </View>
 
-      {/* Navigation to chat */}
-      <View className="p-4 bg-background border-t">
-        <Button 
-          className="w-full"
-          onPress={() => {
-            // Navigate to event chat
-            // router.push(`/chat?eventId=${eventId}`);
-          }}
+      <View style={{ padding: 16, borderTopWidth: 1 }}>
+        <Button
+          style={{ width: '100%' }}
+          onPress={() => router.push(`/(tabs)/chat?eventId=${eventId}`)}
           disabled={!participants.length}
         >
           Open Group Chat

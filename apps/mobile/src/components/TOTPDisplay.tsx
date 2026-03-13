@@ -1,83 +1,124 @@
 import { View, Text } from 'react-native';
-import { useEffect, useState } from 'react';
-import { colors, spacing, typography } from '@yombri/design-tokens';
-import { generateTOTP } from '@yombri/supabase-client';
+import { useEffect, useMemo, useState } from 'react';
+import { typography } from '@yombri/design-tokens';
+import { getEventTotpCode } from '@yombri/supabase-client';
+import { useTheme } from '../providers/ThemeProvider';
 
-interface TOTPDisplayProps {
-  secretKey: string;
-}
+type Props = { eventId: string };
 
-export function TOTPDisplay({ secretKey }: TOTPDisplayProps) {
-  const [code, setCode] = useState<string>('');
+export default function TOTPDisplay({ eventId }: Props) {
+  const { theme } = useTheme();
+  const c = theme.colors;
+
+  const [code, setCode] = useState<string>('------');
   const [secondsLeft, setSecondsLeft] = useState<number>(30);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const updateCode = () => {
-      const newCode = generateTOTP(secretKey);
-      setCode(newCode);
-      
-      const now = Math.floor(Date.now() / 1000);
-      const timeInWindow = now % 30;
-      setSecondsLeft(30 - timeInWindow);
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function refresh() {
+      try {
+        const res = await getEventTotpCode(eventId);
+        if (!alive) return;
+
+        setCode(res.code);
+        setSecondsLeft(res.seconds_left);
+        setError(null);
+
+        const msUntilNext = Math.max(250, res.seconds_left * 1000 + 150);
+        timer = setTimeout(refresh, msUntilNext);
+      } catch (e: any) {
+        if (!alive) return;
+
+        setError(e?.message ?? 'Failed to load code');
+        timer = setTimeout(refresh, 2000);
+      }
+    }
+
+    void refresh();
+
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
     };
+  }, [eventId]);
 
-    updateCode();
-    const interval = setInterval(updateCode, 1000);
-
-    return () => clearInterval(interval);
-  }, [secretKey]);
-
-  const formattedCode = code.match(/.{1,3}/g)?.join(' ') || code;
+  const formatted = useMemo(() => code.match(/.{1,3}/g)?.join(' ') ?? code, [code]);
 
   return (
-    <View 
-      className="items-center justify-center p-8 rounded-lg"
-      style={{ backgroundColor: colors.neutral[900] }}
+    <View
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        borderRadius: 12,
+        backgroundColor: c.surface,
+      }}
     >
       <Text
         style={{
           fontSize: 12,
-          color: colors.neutral[400],
+          color: c.onSurfaceVariant,
           fontWeight: '600',
           letterSpacing: 1,
+          marginBottom: 8,
         }}
-        className="mb-2"
       >
         VISUAL CHECK-IN CODE
       </Text>
-      
+
       <Text
         style={{
-          fontSize: 64,
+          fontSize: 48,
           fontWeight: '700',
-          color: colors.neutral[50],
+          color: c.onSurface,
           letterSpacing: 8,
+          marginBottom: 16,
         }}
-        className="mb-4"
       >
-        {formattedCode}
+        {formatted}
       </Text>
-      
-      <View className="flex-row items-center">
-        <View 
-          className="h-1 rounded-full mr-2"
-          style={{ 
-            width: 120,
-            backgroundColor: colors.neutral[700],
-          }}
-        >
-          <View 
-            className="h-1 rounded-full"
-            style={{ 
-              width: `${(secondsLeft / 30) * 100}%`,
-              backgroundColor: secondsLeft > 10 ? colors.brand.emerald : colors.semantic.warning,
-            }}
-          />
-        </View>
+
+      {!!error && (
         <Text
           style={{
-            fontSize: typography.label.size,
-            color: colors.neutral[400],
+            fontSize: typography.label.md.fontSize,
+            lineHeight: typography.label.md.lineHeight,
+            color: c.onSurfaceVariant,
+            marginBottom: 8,
+            textAlign: 'center',
+          }}
+        >
+          {error}
+        </Text>
+      )}
+
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View
+          style={{
+            height: 4,
+            width: 120,
+            borderRadius: 999,
+            marginRight: 8,
+            backgroundColor: c.surfaceVariant,
+          }}
+        />
+        <View
+          style={{
+            height: 4,
+            width: (Math.min(30, Math.max(0, secondsLeft)) / 30) * 100,
+            borderRadius: 999,
+            backgroundColor: secondsLeft <= 10 ? c.primary : c.primary,
+          }}
+        />
+        <Text
+          style={{
+            fontSize: typography.label.md.fontSize,
+            lineHeight: typography.label.md.lineHeight,
+            color: c.onSurfaceVariant,
+            marginLeft: 8,
           }}
         >
           {secondsLeft}s

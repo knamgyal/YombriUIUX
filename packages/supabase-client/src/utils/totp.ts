@@ -1,4 +1,3 @@
-// packages/supabase-client/src/utils/totp.ts
 import { base32 } from '@scure/base';
 import { hmacSha1 } from './crypto';
 
@@ -7,6 +6,10 @@ export type TotpOptions = {
   digits?: number;
   timestampMs?: number;
 };
+
+function toTimestampMs(value: Date | number): number {
+  return value instanceof Date ? value.getTime() : value;
+}
 
 export function generateTotp(secretBase32: string, opts: TotpOptions = {}): string {
   const stepSeconds = opts.stepSeconds ?? 30;
@@ -45,8 +48,47 @@ export function verifyTotp(
   const stepMs = (opts.stepSeconds ?? 30) * 1000;
 
   for (let w = -window; w <= window; w++) {
-    const candidate = generateTotp(secretBase32, { ...opts, timestampMs: now + w * stepMs });
+    const candidate = generateTotp(secretBase32, {
+      ...opts,
+      timestampMs: now + w * stepMs,
+    });
     if (candidate === code) return true;
   }
+
   return false;
+}
+
+export function generateTotpCode(
+  secretBase32: string,
+  timestamp: Date | number,
+  stepSeconds = 30,
+  digits = 6,
+  windowOffset = 0
+): string {
+  const timestampMs = toTimestampMs(timestamp) + windowOffset * stepSeconds * 1000;
+
+  return generateTotp(secretBase32, {
+    timestampMs,
+    stepSeconds,
+    digits,
+  });
+}
+
+export function validateTotpCode(
+  secretBase32: string,
+  code: string | number,
+  timestamp: Date | number,
+  window = 1,
+  stepSeconds = 30,
+  digits?: number
+): boolean {
+  const normalizedDigits = digits ?? (String(code).length || 6);
+  const normalizedCode = String(code).padStart(normalizedDigits, '0');
+
+  return verifyTotp(secretBase32, normalizedCode, {
+    timestampMs: toTimestampMs(timestamp),
+    window,
+    stepSeconds,
+    digits: normalizedDigits,
+  });
 }
